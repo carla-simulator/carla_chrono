@@ -12,6 +12,7 @@ if(ENABLE_MODULE_IRRLICHT OR ENABLE_MODULE_VSG)
     set(DEMOS ${DEMOS}
         demo_VEH_RigidTerrain_WheeledVehicle
         demo_VEH_SCMTerrain_WheeledVehicle
+        demo_VEH_SCMTerrain_Polaris
     )
 endif()
 
