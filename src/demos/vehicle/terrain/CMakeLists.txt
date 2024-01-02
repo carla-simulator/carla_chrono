@@ -13,6 +13,7 @@ if(ENABLE_MODULE_IRRLICHT OR ENABLE_MODULE_VSG)
         demo_VEH_RigidTerrain_WheeledVehicle
         demo_VEH_SCMTerrain_WheeledVehicle
         demo_VEH_SCMTerrain_Polaris
+        demo_VEH_TiledSCMTerrain_Polaris
     )
 endif()
 

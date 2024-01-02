@@ -280,6 +280,8 @@ set(CV_TERRAIN_FILES
     terrain/RandomSurfaceTerrain.cpp
     terrain/SCMTerrain.h
     terrain/SCMTerrain.cpp
+    terrain/TiledSCMTerrain.h
+    terrain/TiledSCMTerrain.cpp
     terrain/GranularTerrain.h
     terrain/GranularTerrain.cpp
     terrain/FEATerrain.h
