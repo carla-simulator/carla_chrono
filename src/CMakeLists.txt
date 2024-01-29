@@ -679,6 +679,9 @@ endif()
 #------------------------------------------------------------
 # Install headers from chrono_thirdparty folder
 #------------------------------------------------------------
+#install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/cereal
+#        DESTINATION include/chrono_thirdparty
+#        FILES_MATCHING PATTERN "*.h" PATTERN "*.cuh" PATTERN "*.hpp" PATTERN "*.inl")
 
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/src/chrono_thirdparty/filesystem
         DESTINATION include/chrono_thirdparty
