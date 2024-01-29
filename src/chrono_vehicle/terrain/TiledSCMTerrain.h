@@ -19,6 +19,8 @@
 #include "chrono_vehicle/ChTerrain.h"
 #include "chrono_vehicle/ChWorldFrame.h"
 
+#include "chrono_thirdparty/cereal/archives/binary.hpp"
+
 namespace chrono {
 namespace vehicle {
 
@@ -409,6 +411,27 @@ class CH_VEHICLE_API TiledSCMLoader : public ChLoadContainer {
               erosion(false),
               massremainder(0),
               step_plastic_flow(0) {}
+
+    private:
+        friend class cereal::access;
+
+        template <class Archive>
+        void serialize(Archive& archive) {
+            archive(level_initial,
+                   level,
+                   hit_level,
+                   normal,
+                   sinkage,
+                   sinkage_plastic,
+                   sinkage_elastic,
+                   sigma,
+                   sigma_yield,
+                   kshear,
+                   tau,
+                   erosion,
+                   massremainder,
+                   step_plastic_flow);
+        }
     };
 
     // Hash function for a pair of integer grid coordinates

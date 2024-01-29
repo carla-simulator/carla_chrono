@@ -24,6 +24,8 @@
 #include "chrono/serialization/ChArchive.h"
 #include "chrono/serialization/ChArchiveAsciiDump.h"
 
+#include "chrono_thirdparty/cereal/archives/binary.hpp"
+
 namespace chrono {
 
 /// Definition of general purpose 3d vector variables, such as points in 3D.
@@ -242,6 +244,12 @@ class ChVector {
     /// Declaration of friend classes
     template <typename RealB>
     friend class ChVector;
+    friend class cereal::access;
+
+    template <class Archive>
+    void serialize(Archive& archive) {
+        archive(m_data[0], m_data[1], m_data[2]);
+    }
 };
 
 CH_CLASS_VERSION(ChVector<double>, 0)
@@ -940,7 +948,7 @@ inline ChVector<Real> ChVector<Real>::GetOrthogonalVector() const {
 
 // -----------------------------------------------------------------------------
 // Streaming operations
-
+ 
 template <class Real>
 inline void ChVector<Real>::ArchiveOut(ChArchiveOut& marchive) {
     // suggested: use versioning
