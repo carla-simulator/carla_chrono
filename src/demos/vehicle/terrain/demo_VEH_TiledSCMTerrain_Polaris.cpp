@@ -36,7 +36,7 @@ double terrainWidth = 4.0;   // size in Y direction
 double delta = 0.05;         // SCM grid spacing
 
 bool heightmapterrain = false;
-std::string heightmap_file = "";
+std::string heightmap_file = "terrain/binaries/height_data.bin";
 
 ChCoordsys<> init_pos(ChVector<>(1.3, 0, 0.1), QUNIT);
 
@@ -126,17 +126,18 @@ int main(int argc, char* argv[]) {
 
     terrain.SetPlotType(vehicle::TiledSCMTerrain::PLOT_SINKAGE, 0, 0.1);
 
-    if (heightmapterrain) {
-        terrain.Initialize(heightmap_file,  ///< [in] filename for the height map (image file)
-                           terrainLength,   ///< [in] terrain dimension in the X direction
-                           terrainWidth,    ///< [in] terrain dimension in the Y direction
-                           0.0,             ///< [in] minimum height (black level)
-                           1.5,             ///< [in] maximum height (white level)
-                           delta            ///< [in] grid spacing (may be slightly decreased)
-        );
-    } else {
-        terrain.Initialize(terrainLength, terrainWidth, delta);
-    }
+    terrain.InitializeTiledTerrain(vehicle::GetDataFile(heightmap_file), 1000, 1000, 0.1, 100, 100);
+    //if (heightmapterrain) {
+    //    terrain.Initialize(heightmap_file,  ///< [in] filename for the height map (image file)
+    //                       terrainLength,   ///< [in] terrain dimension in the X direction
+    //                       terrainWidth,    ///< [in] terrain dimension in the Y direction
+    //                       0.0,             ///< [in] minimum height (black level)
+    //                       1.5,             ///< [in] maximum height (white level)
+    //                       delta            ///< [in] grid spacing (may be slightly decreased)
+    //    );
+    //} else {
+    //    terrain.Initialize(terrainLength, terrainWidth, delta);
+    //}
 
     // ---------------------------------------
     // Create the vehicle Irrlicht application
@@ -171,7 +172,7 @@ int main(int argc, char* argv[]) {
     while (vis.Run()) {
         double time = sys.GetChTime();
 
-        // Render scene
+        //// Render scene
         vis.BeginScene();
         vis.Render();
         vis.EndScene();
@@ -186,12 +187,12 @@ int main(int argc, char* argv[]) {
         csv << endl;
         num_times++;
 
-        // Update modules
+        //// Update modules
         terrain.Synchronize(time);
         vehicle.Synchronize(time, driver_inputs, terrain);
         vis.Synchronize(time, driver_inputs);
 
-        // Advance dynamics
+        //// Advance dynamics
         sys.DoStepDynamics(step_size);
         vehicle.Advance(step_size);
         terrain.Advance(step_size);

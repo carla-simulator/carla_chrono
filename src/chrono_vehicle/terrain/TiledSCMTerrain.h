@@ -21,6 +21,7 @@
 
 #include "chrono_thirdparty/cereal/archives/binary.hpp"
 
+
 namespace chrono {
 namespace vehicle {
 
@@ -29,10 +30,8 @@ class TiledSCMLoader;
 /// @addtogroup vehicle_terrain
 /// @{
 
-/// Deformable terrain model.
-/// This class implements a deformable terrain based on the Soil Contact Model.
-/// Unlike RigidTerrain, the vertical coordinates of this terrain mesh can be deformed
-/// due to interaction with ground vehicles or other collision shapes.
+/// Deformable tiled terrain model.
+/// This class implements a deformable tiled terrain based on the Soil Contact Model.
 class CH_VEHICLE_API TiledSCMTerrain : public ChTerrain {
   public:
     enum DataPlotType {
@@ -251,6 +250,14 @@ class CH_VEHICLE_API TiledSCMTerrain : public ChTerrain {
                     double delta                                       ///< [in] grid spacing
     );
 
+    /// Initialize the terrain system (binary).
+    void InitializeTiledTerrain(const std::string& heightmap_binary,
+                    double sizeX,
+                    double sizeY,
+                    double delta,
+                    double tileLength,
+                    double tileWidth);
+
     /// Node height level at a given grid location.
     typedef std::pair<ChVector2<int>, double> NodeLevel;
 
@@ -352,6 +359,7 @@ class CH_VEHICLE_API TiledSCMLoader : public ChLoadContainer {
     void Initialize(const std::string& mesh_file,  ///< [in] filename for the mesh (Wavefront OBJ)
                     double delta                   ///< [in] grid spacing (may be slightly decreased)
     );
+
 
     /// Initialize the terrain system (mesh).
     /// The initial undeformed terrain profile is provided via the specified triangular mesh.
@@ -556,6 +564,28 @@ class CH_VEHICLE_API TiledSCMLoader : public ChLoadContainer {
     int m_nx;              ///< range for grid indices in X direction: [-m_nx, +m_nx]
     int m_ny;              ///< range for grid indices in Y direction: [-m_ny, +m_ny]
 
+    // Tiled parameters
+    std::array<std::pair<int, double*>, 4> m_tiled_heights; //< (base) grid heights (when initializing from tiled terrain)
+
+    int m_tile_nx;
+    int m_tile_ny;
+    std::fstream m_heightmap_file;
+    std::list<std::pair<int, std::fstream>> m_simulation_data_files;
+    std::unordered_map<int, std::string> m_tile_simulation_data_map;
+
+    void InitializeTiledTerrain(const std::string& filename,
+                                double hSizeX,
+                                double hSizeY,
+                                double delta,
+                                double tileLength,
+                                double tileWidth);
+    void LoadTile(int tileID);
+    void UnloadTile(int tileID);
+
+    void SerializeSimulationData(int tileID);
+    void DeserializeSimulationData(int tileID);
+    
+    // Non tiled parameters
     ChMatrixDynamic<> m_heights;  ///< (base) grid heights (when initializing from height-field map)
     double m_base_height;         ///< default height for vertices outside the projection of input mesh
 

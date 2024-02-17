@@ -4,6 +4,8 @@
 #include <queue>
 #include <unordered_set>
 #include <limits>
+#include <filesystem>
+#include <chrono>
 
 #ifdef _OPENMP
     #include <omp.h>
@@ -20,6 +22,7 @@
 #include "chrono_vehicle/terrain/TiledSCMTerrain.h"
 
 #include "chrono_thirdparty/stb/stb.h"
+#include "chrono_thirdparty/cereal/types/unordered_map.hpp"
 
 namespace chrono {
 namespace vehicle {
@@ -212,6 +215,16 @@ void TiledSCMTerrain::Initialize(const std::string& mesh_file, double delta) {
 // Initialize the terrain from a specified triangular mesh file.
 void TiledSCMTerrain::Initialize(const geometry::ChTriangleMeshConnected& trimesh, double delta) {
     m_loader->Initialize(trimesh, delta);
+}
+
+
+void TiledSCMTerrain::InitializeTiledTerrain(const std::string& heightmap_file,
+                                        double sizeX,
+                                        double sizeY,
+                                        double delta,
+                                        double tileLength,
+                                        double tileWidth) {
+    m_loader->InitializeTiledTerrain(heightmap_file, sizeX, sizeY, delta, tileLength, tileWidth);
 }
 
 // Get the heights of modified grid nodes.
@@ -669,6 +682,217 @@ void TiledSCMLoader::CreateVisualizationMesh(double sizeX, double sizeY) {
     for (int in = 0; in < n_verts; in++) {
         normals[in] /= (double)accumulators[in];
     }
+}
+
+void TiledSCMLoader::InitializeTiledTerrain(const std::string& filename,
+                                double sizeX,
+                                double sizeY,
+                                double delta,
+                                double tileLength,
+                                double tileWidth) {
+    m_heightmap_file.open(filename, std::ios::binary | std::ios::in);
+    if (!m_heightmap_file) {
+        std::cout << "Cannot open heightmap file " << filename << std::endl;
+        return;
+    }
+    
+    m_nx = static_cast<int>(std::ceil((sizeX / 2) / delta));    // half number of divisions in X direction
+    m_ny = static_cast<int>(std::ceil((sizeY / 2) / delta));    // number of divisions in Y direction
+    m_tile_nx = static_cast<int>(std::ceil(tileLength / delta));  // number of divisions in X direction for each tile
+    m_tile_ny = static_cast<int>(std::ceil(tileWidth / delta));   // number of divisions in Y direction for each tile
+    
+    int nvx = 2 * m_nx + 1;                                     // number of grid vertices in X direction
+    int nvy = 2 * m_ny + 1;                                     // number of grid vertices in Y direction
+    m_delta = sizeX / (2.0 * m_nx);                             // grid spacing
+    m_area = std::pow(m_delta, 2);                              // area of a cell
+
+    // Deallocate old buffers, if they were previously allocated
+    for (auto &tile : m_tiled_heights) {
+        delete[] tile.second;
+        tile.second = nullptr;
+    }
+
+    // Allocate new buffers based on the new tile size
+    for (auto &tile : m_tiled_heights) {
+        tile.second = new double[(m_tile_nx + 1) * (m_tile_ny + 1)];
+        tile.first = -1;
+    }
+
+    int number_of_tilesX = nvx / m_tile_nx;
+    int number_of_tilesY = nvy / m_tile_ny;
+
+    std::filesystem::path temp_folder_path("../data/vehicle/terrain/binaries/temp");
+
+    if(std::filesystem::exists(temp_folder_path)) {
+        std::cout << "Temp folder already exists" << std::endl;
+        if(std::filesystem::is_directory(temp_folder_path)) {
+            for( const auto & entry : std::filesystem::directory_iterator(temp_folder_path)) {
+                std::filesystem::remove_all(entry.path());
+            }
+        } else {
+            std::filesystem::remove(temp_folder_path);
+            std::filesystem::create_directory(temp_folder_path);
+        }
+    } else {
+        std::filesystem::create_directory(temp_folder_path);
+    }
+
+    //int tileID = 0;
+    //for(int i = 0; i < number_of_tilesX; i++) {
+    //    for(int j = 0; j < number_of_tilesY; j++) {
+    //        std::filesystem::path tile_file_path = temp_folder_path / ("Tile_" + std::to_string(tileID) + ".cereal");
+    //        std::ofstream tile_file(tile_file_path.string(), std::ios::binary | std::ios::out);
+    //        cereal::BinaryOutputArchive archive(tile_file);
+
+    //        if (tile_file.is_open()) {
+    //            std::cout << "Writing tile " << tileID << " to " << tile_file_path << std::endl;
+    //        } else {
+    //            std::cout << "Cannot open tile file " << tile_file_path << std::endl;
+    //            return;
+    //        }
+
+    //        tileID++;
+    //    }
+    //}
+
+    SerializeSimulationData(0);
+    LoadTile(0);
+    DeserializeSimulationData(0);
+
+    if (!m_trimesh_shape)
+        return;
+
+    CreateVisualizationMesh(sizeX, sizeY);
+    this->AddVisualShape(m_trimesh_shape);
+}
+
+void TiledSCMLoader::SerializeSimulationData(int tileID) {
+    std::filesystem::path temp_folder_path("../data/vehicle/terrain/binaries/temp");
+    std::filesystem::path tile_path = temp_folder_path / ("Tile_" + std::to_string(tileID) + ".cereal");
+
+    std::ofstream tile_file(tile_path.string(), std::ios::binary | std::ios::out);
+    cereal::BinaryOutputArchive archive(tile_file);
+
+    std::unordered_map<int, NodeRecord> testRecordData;
+    float percentage_explored = 1.f;
+
+    int nodesCreated = 0;
+    for(int i = 0; i < m_tile_nx && nodesCreated < (m_tile_ny * m_tile_nx) * percentage_explored; i++) {
+        for(int j = 0; j < m_tile_ny && nodesCreated < (m_tile_ny * m_tile_nx) * percentage_explored; j++) {
+            int nodeID = i * m_tile_ny + j;
+            NodeRecord nodeRecord;
+            nodeRecord.level_initial = 0;
+            nodeRecord.level = 0;
+            nodeRecord.normal = ChVector<>(0, 0, 1);
+            testRecordData[nodeID] = nodeRecord;
+            nodesCreated++;
+        }
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+    archive(testRecordData);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Serialization time: " << elapsed.count() << " ms" << std::endl;
+}
+
+void TiledSCMLoader::DeserializeSimulationData(int tileID) {
+    std::filesystem::path temp_folder_path("../data/vehicle/terrain/binaries/temp");
+    std::filesystem::path tile_path = temp_folder_path / ("Tile_" + std::to_string(tileID) + ".cereal");
+
+    std::ifstream tile_file(tile_path.string(), std::ios::binary | std::ios::in);
+    cereal::BinaryInputArchive archive(tile_file);
+
+    std::cout << "Deserializing" << std::endl;
+    std::unordered_map<int, NodeRecord> testRecordData;
+    auto start = std::chrono::high_resolution_clock::now();
+    archive(testRecordData);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Deserialization time: " << elapsed.count() << " ms" << std::endl;
+}
+
+void TiledSCMLoader::LoadTile(int tileID) {
+    
+    int nvx = (2 * m_nx + 1);
+    int nvy = (2 * m_ny + 1);
+
+    int number_of_tilesX = nvx / m_tile_nx;
+    int number_of_tilesY = nvy / m_tile_ny;
+
+    if(tileID < 0 || tileID >= number_of_tilesX * number_of_tilesY) {
+        std::cout << "Error: Invalid tile ID" << " " << number_of_tilesX * number_of_tilesY << std::endl;
+        return;
+    }
+
+    int availableSlot = -1;
+    for(int i = 0; i < 4; i++) {
+        int currentTileID = m_tiled_heights[i].first;
+        if(currentTileID == tileID) {
+            std::cout << "Tile " << tileID << " is already loaded" << std::endl;
+            return;
+        }
+        else if(currentTileID == -1) {
+            availableSlot = i;
+            break;
+        }
+    }
+    
+    if(availableSlot == -1) {
+        std::cout << "Error: No available slot to load tile " << tileID << std::endl;
+        return;
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    const long long bytesPerTile = (m_tile_nx + 1) * (m_tile_ny + 1) * sizeof(double);
+    char* buffer = reinterpret_cast<char*>(
+        m_tiled_heights[availableSlot].second);
+
+    long long offset = static_cast<long long>(tileID) * bytesPerTile;
+    m_heightmap_file.seekg(offset, std::ios::beg);
+
+    if(!m_heightmap_file.read(buffer, bytesPerTile)) {
+        std::cout << "Error: Could not read height data from file" << std::endl;
+        return;
+    }
+
+    m_tiled_heights[availableSlot].first = tileID;
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+    std::cout << "Loading time: " << elapsed.count() << " ms" << std::endl;
+
+    //// Convert buffer back to double* for verification
+    //double* loadedData = reinterpret_cast<double*>(buffer);
+
+    //bool isCorrect = true;
+    //for(int i = 0; i < nvy * nvx; i++) {
+    //    if(loadedData[i] != (double)(i) ){
+    //        std::cout << loadedData[i] << " " << "expected: " << i;
+    //        isCorrect = false;
+    //        break;
+    //    }
+    //}
+
+    //if(isCorrect) {
+    //    std::cout << "Tile " << tileID << " loaded correctly." << std::endl;
+    //} else {
+    //    std::cout << "Error: Tile " << tileID << " did not load correctly." << std::endl;
+    //}
+
+}
+
+void TiledSCMLoader::UnloadTile(int tileID) {
+    for(int i = 0; i < 4; i++) {
+        if(m_tiled_heights[i].first == tileID) {
+            m_tiled_heights[i].first = -1;
+            std::cout << "Unloaded Tile " << tileID << std::endl;
+            return;
+        }
+    }
+
+    std::cout << "Tile " << tileID << " is not currently loaded." << std::endl;
 }
 
 void TiledSCMLoader::SetupInitial() {
