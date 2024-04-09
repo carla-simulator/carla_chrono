@@ -55,6 +55,11 @@ double SCMTerrain::GetInitHeight(const ChVector<>& loc) const {
     return m_loader->GetInitHeight(loc);
 }
 
+// Get the initial terrain height below the specified location.
+bool SCMTerrain::SetInitHeight(const ChVector<>& loc, double height) {
+    return m_loader->GetInitHeight(loc);
+}
+
 // Get the initial terrain normal at the point below the specified location.
 ChVector<> SCMTerrain::GetInitNormal(const ChVector<>& loc) const {
     return m_loader->GetInitNormal(loc);
@@ -751,6 +756,21 @@ double SCMLoader::GetInitHeight(const ChVector2<int>& loc) const {
     }
 }
 
+bool SCMLoader::SetInitHeight(const ChVector2<int>& loc, double height) {
+    switch (m_type) {
+        case PatchType::FLAT:
+            return false;
+        case PatchType::HEIGHT_MAP:
+        case PatchType::TRI_MESH: {
+            auto x = ChClamp(loc.x(), -m_nx, +m_nx);
+            auto y = ChClamp(loc.y(), -m_ny, +m_ny);
+            m_heights(x + m_nx, y + m_ny) = height;
+            return true;
+        }
+        default:
+            return false;
+    }
+}
 // Get the initial undeformed terrain normal (relative to the SCM plane) at the specified grid node.
 ChVector<> SCMLoader::GetInitNormal(const ChVector2<int>& loc) const {
     switch (m_type) {

@@ -184,6 +184,8 @@ class CH_VEHICLE_API SCMTerrain : public ChTerrain {
     /// Get the initial (undeformed) terrain height below the specified location.
     double GetInitHeight(const ChVector<>& loc) const;
 
+    bool SetInitHeight(const ChVector<>& loc, double height);
+
     /// Get the initial (undeformed) terrain normal at the point below the specified location.
     ChVector<> GetInitNormal(const ChVector<>& loc) const;
 
@@ -409,6 +411,8 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
 
     // Get the initial undeformed terrain height (relative to the SCM plane) at the specified grid node.
     double GetInitHeight(const ChVector2<int>& loc) const;
+
+    bool SetInitHeight(const ChVector2<int>& loc, double height);
 
     // Get the initial undeformed terrain normal (relative to the SCM plane) at the specified grid node.
     ChVector<> GetInitNormal(const ChVector2<int>& loc) const;
