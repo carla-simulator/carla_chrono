@@ -185,7 +185,7 @@ class CH_VEHICLE_API SCMTerrain : public ChTerrain {
     /// Get the initial (undeformed) terrain height below the specified location.
     double GetInitHeight(const ChVector<>& loc) const;
 
-    bool setInitHeight(const ChVector2<int>& loc, double height);
+    bool SetInitHeight(const ChVector2<int>& loc, double height);
 
     /// Get the initial (undeformed) terrain normal at the point below the specified location.
     ChVector<> GetInitNormal(const ChVector<>& loc) const;
