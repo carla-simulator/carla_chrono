@@ -56,8 +56,9 @@ double SCMTerrain::GetInitHeight(const ChVector<>& loc) const {
 }
 
 // Get the initial terrain height below the specified location.
-bool SCMTerrain::SetInitHeight(const ChVector<>& loc, double height) {
-    return m_loader->GetInitHeight(loc);
+bool SCMTerrain::SetInitHeight(const ChVector2<int>& loc, double height) {
+    // Express location in the SCM frame
+    return m_loader->SetInitHeight(loc, height);
 }
 
 // Get the initial terrain normal at the point below the specified location.

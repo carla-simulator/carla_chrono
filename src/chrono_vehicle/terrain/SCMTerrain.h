@@ -35,6 +35,7 @@
 #include "chrono_vehicle/ChSubsysDefs.h"
 #include "chrono_vehicle/ChTerrain.h"
 #include "chrono_vehicle/ChWorldFrame.h"
+#include "core/ChVector2.h"
 
 namespace chrono {
 namespace vehicle {
@@ -184,7 +185,7 @@ class CH_VEHICLE_API SCMTerrain : public ChTerrain {
     /// Get the initial (undeformed) terrain height below the specified location.
     double GetInitHeight(const ChVector<>& loc) const;
 
-    bool SetInitHeight(const ChVector<>& loc, double height);
+    bool setInitHeight(const ChVector2<int>& loc, double height);
 
     /// Get the initial (undeformed) terrain normal at the point below the specified location.
     ChVector<> GetInitNormal(const ChVector<>& loc) const;
