@@ -96,7 +96,7 @@ set(CTEST_MEMORYCHECK_COMMAND "/usr/bin/valgrind")
 set(CTEST_MEMORYCHECK_COMMAND_OPTIONS "-v --tool=memcheck --leak-check=full --track-fds=yes --num-callers=50 --show-reachable=yes --track-origins=yes --malloc-fill=0xff --free-fill=0xfe")
 
 if (NOT WIN32)
-	option(USE_CCACHE "Build using ccache compiler driver" OFF) 
+	option(USE_CCACHE "Build using ccache compiler driver" OFF)
 
 	if (USE_CCACHE)
 		find_program(CCACHE_EXE ccache)
@@ -227,8 +227,8 @@ else()
 endif()
 
 #------------------------------------------------------------
-# Copy data directory to BUILD tree 
-# Install data directory 
+# Copy data directory to BUILD tree
+# Install data directory
 # Install sample template_project
 #------------------------------------------------------------
 
