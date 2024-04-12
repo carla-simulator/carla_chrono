@@ -239,6 +239,14 @@ class CH_VEHICLE_API SCMTerrain : public ChTerrain {
                     double hMax,                        ///< [in] maximum height (white level)
                     double delta                        ///< [in] grid spacing (may be slightly decreased)
     );
+ 
+    void Initialize(const std::string& heightmap_file,  ///< [in] filename for the height map (binary file)
+                    int sizeX,                       ///< [in] number of vertices in the X direction
+                    int sizeY,                       ///< [in] number of vertices in the Y direction
+                    double terrain_sizeX,
+                    double terrain_sizeY,
+                    double delta                        ///< [in] grid spacing (may be slightly decreased)
+    );
 
     /// Initialize the terrain system (mesh).
     /// The initial undeformed terrain profile is provided via the specified Wavefront OBJ mesh file.
@@ -336,6 +344,16 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
                     double sizeY,                       ///< [in] terrain dimension in the Y direction
                     double hMin,                        ///< [in] minimum height (black level)
                     double hMax,                        ///< [in] maximum height (white level)
+                    double delta                        ///< [in] grid spacing (may be slightly decreased)
+    );
+
+    /// Initialize the terrain system (height map).
+    /// The initial undeformed mesh is provided via the specified image file as a height map.
+    void Initialize(const std::string& filename,  ///< [in] filename for the height map (image file)
+                    int sizeX,                       ///< [in] terrain dimension in the X direction
+                    int sizeY,                       ///< [in] terrain dimension in the Y direction
+                    double terrain_sizeX,
+                    double terrain_sizeY,
                     double delta                        ///< [in] grid spacing (may be slightly decreased)
     );
 

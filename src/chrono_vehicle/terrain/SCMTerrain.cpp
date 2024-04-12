@@ -222,6 +222,16 @@ void SCMTerrain::Initialize(const std::string& heightmap_file,
     m_loader->Initialize(heightmap_file, sizeX, sizeY, hMin, hMax, delta);
 }
 
+// Initialize the terrain from a heightmap binary file.
+void SCMTerrain::Initialize(const std::string& heightmap_file, 
+                            int sizeX,
+                            int sizeY,
+                            double terrain_sizeX,
+                            double terrain_sizeY,
+                            double delta) {
+    m_loader->Initialize(heightmap_file, sizeX, sizeY, terrain_sizeX, terrain_sizeY, delta);
+}
+
 // Initialize the terrain from a specified OBJ mesh file.
 void SCMTerrain::Initialize(const std::string& mesh_file, double delta) {
     m_loader->Initialize(mesh_file, delta);
@@ -467,6 +477,62 @@ void SCMLoader::Initialize(const std::string& heightmap_file,
         return;
 
     CreateVisualizationMesh(sizeX, sizeY);
+    this->AddVisualShape(m_trimesh_shape);
+}
+
+// Initialize the terrain from a specified height map.
+void SCMLoader::Initialize(const std::string& filename,
+                                   int sizeX,
+                                   int sizeY,
+                                   double terrain_sizeX,
+                                   double terrain_sizeY,
+                                   double delta) {
+
+    // Read the heightmap file.
+    std::fstream heightmap_file;
+    heightmap_file.open(filename, std::ios::binary | std::ios::in);
+    if (!heightmap_file) {
+        std::cout << "Cannot open heightmap file " << filename << std::endl;
+        return;
+    }
+
+    m_type = PatchType::HEIGHT_MAP;
+    m_nx = (sizeX - 1) / 2;                                       // range for grid indices in X direction: [-m_nx, +m_nx]
+    m_ny = (sizeY - 1) / 2;                                       // range for grid indices in Y direction: [-m_ny, +m_ny]
+    m_delta = delta;                                        // grid spacing
+    m_area = std::pow(m_delta, 2);                          // area of a cell
+    int nvx = sizeX;                                    // number of grid vertices in X direction
+    int nvy = sizeY;                                    // number of grid vertices in Y direction
+
+    // Allocate buffers based on the terrain size
+    m_heights = ChMatrixDynamic<>(nvx, nvy);
+    double* height_data = new double[(nvx) * (nvy)];
+
+    const long long bytes = nvx * nvy * sizeof(double);
+    char* buffer = reinterpret_cast<char*>(height_data);
+
+    // Read data from heightmap
+    heightmap_file.seekg(0, std::ios::beg);
+    if(!heightmap_file.read(buffer, bytes)) {
+        std::cout << "Error: Could not read height data from file" << std::endl;
+        return;
+    }
+
+    for(int i = 0; i < 100 ; i++) {
+        std::cout << height_data[i] << std::endl;
+    }
+    for (int i = 0; i < nvx; i++) {
+        for (int j = 0; j < nvy; j++) {
+            m_heights(i, j) = height_data[i * nvx + j];
+        }
+    }
+    std::cout << m_heights.size() << std::endl;
+
+    // Return now if no visualization
+    if (!m_trimesh_shape)
+        return;
+
+    CreateVisualizationMesh(terrain_sizeX, terrain_sizeY);
     this->AddVisualShape(m_trimesh_shape);
 }
 
