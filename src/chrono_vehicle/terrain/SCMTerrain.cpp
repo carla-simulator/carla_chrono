@@ -518,15 +518,12 @@ void SCMLoader::Initialize(const std::string& filename,
         return;
     }
 
-    for(int i = 0; i < 100 ; i++) {
-        std::cout << height_data[i] << std::endl;
-    }
-    for (int i = 0; i < nvx; i++) {
-        for (int j = 0; j < nvy; j++) {
-            m_heights(i, j) = height_data[i * nvx + j];
+    // Set heights from height_data 
+    for (int y = 0; y < nvy; y++) {
+        for (int x = 0; x < nvx; x++) {
+            m_heights(x, y) = height_data[y * nvx + x];
         }
     }
-    std::cout << m_heights.size() << std::endl;
 
     // Return now if no visualization
     if (!m_trimesh_shape)
